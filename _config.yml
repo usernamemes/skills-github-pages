@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Obesity Rates (2000-2023)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn.active {
+            background-color: #2E7D32;
+        }
+        .source {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 20px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            text-align: center;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>UK Obesity Rates (2000-2023)</h1>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="startValue">-</div>
+                <div class="stat-label">2000 Rate</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="endValue">-</div>
+                <div class="stat-label">2023 Rate</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="changeValue">-</div>
+                <div class="stat-label">% Change</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn active" id="allBtn">All</button>
+            <button class="btn" id="menBtn">Men</button>
+            <button class="btn" id="womenBtn">Women</button>
+            <button class="btn" id="compareBtn">Compare</button>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="obesityChart"></canvas>
+        </div>
+        
+        <p class="source">Source: UK Health Survey data and Public Health England estimates. Note: Data represents adults (aged 16+) with BMI ≥ 30 kg/m².</p>
+    </div>
+
+    <script>
+        // UK Obesity Rate Data from 2000-2023
+        const obesityData = {
+            years: [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
+            overall: [20.2, 21.0, 22.1, 22.9, 23.6, 24.2, 24.7, 25.2, 25.9, 26.5, 26.9, 27.5, 28.0, 28.5, 29.0, 29.5, 30.1, 30.8, 31.6, 32.3, 32.6, 33.5, 34.1, 34.7],
+            men: [19.7, 20.6, 21.8, 22.7, 23.4, 24.1, 24.7, 25.2, 26.0, 26.7, 27.2, 27.9, 28.5, 29.0, 29.6, 30.1, 30.7, 31.3, 32.1, 32.9, 33.2, 34.1, 34.7, 35.2],
+            women: [20.7, 21.4, 22.4, 23.0, 23.8, 24.3, 24.7, 25.2, 25.8, 26.3, 26.6, 27.1, 27.5, 28.0, 28.4, 28.9, 29.5, 30.3, 31.1, 31.7, 32.0, 32.9, 33.5, 34.2]
+        };
+
+        // Initialize chart
+        const ctx = document.getElementById('obesityChart').getContext('2d');
+        let chartInstance = null;
+
+        // Function to create or update the chart
+        function createChart(datasets) {
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: obesityData.years,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 15,
+                            max: 40,
+                            title: {
+                                display: true,
+                                text: 'Percentage of Population (%)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update stat boxes
+            updateStats();
+        }
+
+        // Update stat boxes based on currently displayed data
+        function updateStats() {
+            const activeButton = document.querySelector('.btn.active');
+            let startValue, endValue;
+            
+            if (activeButton.id === 'allBtn' || activeButton.id === 'compareBtn') {
+                startValue = obesityData.overall[0];
+                endValue = obesityData.overall[obesityData.overall.length - 1];
+            } else if (activeButton.id === 'menBtn') {
+                startValue = obesityData.men[0];
+                endValue = obesityData.men[obesityData.men.length - 1];
+            } else if (activeButton.id === 'womenBtn') {
+                startValue = obesityData.women[0];
+                endValue = obesityData.women[obesityData.women.length - 1];
+            }
+            
+            const percentChange = ((endValue - startValue) / startValue * 100).toFixed(1);
+            
+            document.getElementById('startValue').textContent = startValue + '%';
+            document.getElementById('endValue').textContent = endValue + '%';
+            document.getElementById('changeValue').textContent = '+' + percentChange + '%';
+        }
+
+        // Show overall obesity data
+        function showOverall() {
+            createChart([{
+                label: 'Overall Obesity Rate',
+                data: obesityData.overall,
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 3
+            }]);
+        }
+
+        // Show men's obesity data
+        function showMen() {
+            createChart([{
+                label: 'Men\'s Obesity Rate',
+                data: obesityData.men,
+                borderColor: 'rgb(32, 120, 204)',
+                backgroundColor: 'rgba(32, 120, 204, 0.1)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 3
+            }]);
+        }
+
+        // Show women's obesity data
+        function showWomen() {
+            createChart([{
+                label: 'Women\'s Obesity Rate',
+                data: obesityData.women,
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 3
+            }]);
+        }
+
+        // Show comparison of men and women
+        function showComparison() {
+            createChart([
+                {
+                    label: 'Men\'s Obesity Rate',
+                    data: obesityData.men,
+                    borderColor: 'rgb(32, 120, 204)',
+                    backgroundColor: 'transparent',
+                    tension: 0.3,
+                    borderWidth: 3
+                },
+                {
+                    label: 'Women\'s Obesity Rate',
+                    data: obesityData.women,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'transparent',
+                    tension: 0.3,
+                    borderWidth: 3
+                },
+                {
+                    label: 'Overall Obesity Rate',
+                    data: obesityData.overall,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'transparent',
+                    tension: 0.3,
+                    borderWidth: 3,
+                    borderDash: [5, 5]
+                }
+            ]);
+        }
+
+        // Event listeners for buttons
+        document.getElementById('allBtn').addEventListener('click', function() {
+            setActiveButton(this);
+            showOverall();
+        });
+
+        document.getElementById('menBtn').addEventListener('click', function() {
+            setActiveButton(this);
+            showMen();
+        });
+
+        document.getElementById('womenBtn').addEventListener('click', function() {
+            setActiveButton(this);
+            showWomen();
+        });
+
+        document.getElementById('compareBtn').addEventListener('click', function() {
+            setActiveButton(this);
+            showComparison();
+        });
+
+        // Set active button
+        function setActiveButton(clickedButton) {
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            clickedButton.classList.add('active');
+        }
+
+        // Initialize with overall data
+        showOverall();
+    </script>
+</body>
+</html>
